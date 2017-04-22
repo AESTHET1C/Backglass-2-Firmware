@@ -54,7 +54,7 @@
 
 
 .MACRO ACK
-ldi  ZL, 0b11000101
+ldi  ZL, 0b11000100
 sts  TWCR, ZL
 .ENDMACRO
 
@@ -187,13 +187,13 @@ INIT:
 	; Configure TWI
 	clr  TWI_QUEUE_POINTER          ; Initialize byte select pointer
 	ldi  r16, 0b00110000            ; Set TWI pullups
-	lds  r17, PORTC
+	in   r17, PORTC
 	or   r17, r16
-	sts  PORTC, r17
+	out  PORTC, r17
 	ldi  r16, TWI_SLAVE_ADDRESS     ; Set slave address
 	lsl  r16
 	sts  TWAR, r16
-	ldi  r16, 0b01000101            ; Enable module
+	ldi  r16, 0b01000100            ; Enable module
 	sts  TWCR, r16
 
 	;Set initial display variables
@@ -204,14 +204,14 @@ INIT:
 	sts  Digit2, ZERO
 	sts  Digit3, ZERO
 	ldi  r16, 0b11110000            ; Initialize output pins
-	lds  r17, PORTC
+	in   r17, PORTC
 	and  r17, r16
-	sts  PORTC, r17
-	sts  PORTD, ZERO
+	out  PORTC, r17
+	out  PORTD, ZERO
 	ldi  r16, 0b00001111
-	sts  DDRC, r16
+	out  DDRC, r16
 	ldi  r16, 0b11111111
-	sts  DDRD, r16
+	out  DDRD, r16
 
 	;Enable global interrupts
 	sei
@@ -556,7 +556,6 @@ TWI_CHECK_CODE:
 
 
 TOV1_ISR:
-
 	; Handle audio output (99 - 167 cycles)
 	TOV1_ISR_AUDIO:
 	lds  r16, (ChannelPhaseArray + 0) ; r16 = Channel 0 phase
@@ -689,8 +688,8 @@ TOV1_ISR:
 	mov  r17, CURRENT_DIGIT
 	andi r17, 0x0F
 	in   r18, PORTC
-	andi r18, 0x0F
-	add  r18, r17
+	andi r18, 0xF0
+	or   r18, r17
 	out  PORTD, ZERO
 	out  PORTC, r18
 	out  PORTD, r16
