@@ -171,6 +171,10 @@ INIT:
 	out  SPL, r16
 
 	; Configure TIMER1
+	in   r16, DDRB                  ; Set pin to output
+	ldi  r17, 0b00000010
+	or   r16, r17
+	out  DDRB, r16
 	ldi  r16, 0b10000010            ; Select fast non-inverting PWM mode
 	sts  TCCR1A, r16
 	ldi  r16, 0b00011000            ; Select ICR1 as TOP, do not yet enable clock
@@ -219,6 +223,7 @@ INIT:
 ; Main code
 ; Handles TWI reading and state
 TWI_LOOP:
+
 	lds  r11, TWCR
 	sbrs r11, 7
 	rjmp TWI_LOOP
@@ -314,6 +319,7 @@ TWI_CHECK_CODE:
 		ldi  ZL, (low(TWIBufferArray) + 0)
 		ld   ZL, Z
 		lsl  ZL
+		lsl  ZL
 		adc  r11, ZERO
 		mov  ZH, r11
 		lpm  r11, Z+
@@ -338,6 +344,7 @@ TWI_CHECK_CODE:
 		lsl  r11
 		ldi  ZL, (low(TWIBufferArray) + 1)
 		ld   ZL, Z
+		lsl  ZL
 		lsl  ZL
 		adc  r11, ZERO
 		mov  ZH, r11
@@ -364,6 +371,7 @@ TWI_CHECK_CODE:
 		ldi  ZL, (low(TWIBufferArray) + 2)
 		ld   ZL, Z
 		lsl  ZL
+		lsl  ZL
 		adc  r11, ZERO
 		mov  ZH, r11
 		lpm  r11, Z+
@@ -388,6 +396,7 @@ TWI_CHECK_CODE:
 		lsl  r11
 		ldi  ZL, (low(TWIBufferArray) + 3)
 		ld   ZL, Z
+		lsl  ZL
 		lsl  ZL
 		adc  r11, ZERO
 		mov  ZH, r11
@@ -556,6 +565,11 @@ TWI_CHECK_CODE:
 
 
 TOV1_ISR:
+
+	; Save status flags to stack
+	in   r16, SREG
+	push r16
+
 	; Handle audio output (99 - 167 cycles)
 	TOV1_ISR_AUDIO:
 	lds  r16, (ChannelPhaseArray + 0) ; r16 = Channel 0 phase
@@ -678,7 +692,7 @@ TOV1_ISR:
 	sts  (ChannelPhaseArray + 2), r18
 	sts  (ChannelPhaseArray + 3), r19
 
-	; Handle 7-seg display (14 cycles)
+	; Handle 7-seg display
 	TOV1_ISR_DISPLAY:
 	lsl  CURRENT_DIGIT
 	adc  CURRENT_DIGIT, ZERO
@@ -694,6 +708,9 @@ TOV1_ISR:
 	out  PORTC, r18
 	out  PORTD, r16
 
+	; Revert status flags and return
+	pop  r16
+	out  SREG, r16
 	reti
 
 
